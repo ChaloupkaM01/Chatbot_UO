@@ -1,0 +1,5 @@
+os
+dotenv
+aiohttp
+fastapi
+uvicorn
