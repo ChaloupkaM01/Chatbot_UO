@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
-import httpx
 from dotenv import load_dotenv
+import aiohttp
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,7 +15,7 @@ app = FastAPI()
 class ChatRequest(BaseModel):
     prompt: str
 
-# Function to interact with X.AI API using httpx
+# Function to interact with X.AI API using aiohttp
 async def get_xai_response(prompt: str) -> str:
     """
     Sends a request to the X.AI API with the provided prompt and retrieves the response.
@@ -42,14 +42,14 @@ async def get_xai_response(prompt: str) -> str:
     }
 
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, headers=headers, json=data)
-            response.raise_for_status()  # Raise an error for HTTP errors
-            response_data = response.json()
-            return response_data['choices'][0]['message']['content']
-
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=data) as response:
+                if response.status != 200:
+                    # Raise an HTTPException with the status code and response text if the request fails
+                    raise HTTPException(status_code=response.status, detail=await response.text())
+                
+                response_data = await response.json()
+                return response_data['choices'][0]['message']['content']
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error contacting X.AI API: {str(e)}")
