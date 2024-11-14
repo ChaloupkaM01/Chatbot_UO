@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-XAI_API_KEY = os.getenv("API_KEY")
+XAI_API_KEY = os.getenv("X_API_KEY")
 
 # Initialize FastAPI app
 app = FastAPI()
