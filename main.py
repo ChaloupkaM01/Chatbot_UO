@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import aiohttp
 import os
 from dotenv import load_dotenv
@@ -6,34 +7,27 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
+
 OPENAI_API_KEY = os.getenv("API_KEY")
+ASSISTANT_ID = os.getenv("ASSISTANT_ID")
+#OPENAI_API_URL = f"https://api.openai.com/v1/assistants/{ASSISTANT_ID}/messages"
+OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 
-@app.get("/hello")
-async def hello_endpoint(name: str = "World"):
-    return {"message": f"Hello, {name}!"}
-
-@app.post("/ask_chatgpt/")
-async def ask_chatgpt(prompt: str):
+@app.post("/send-message")
+async def send_message_to_assistant(prompt: str):
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
-    data = {
-        "model": "gpt-4o-mini",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7,
-        "max_tokens": 100
+    payload = {
+        "input": {"text": prompt}
     }
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(
-            "https://api.openai.com/v1/chat/completions", headers=headers, json=data
-        ) as response:
+        async with session.post(OPENAI_API_URL, json=payload, headers=headers) as response:
             if response.status != 200:
-                error_detail = await response.text()
-                raise HTTPException(status_code=response.status, detail=error_detail)
+                detail = await response.text()
+                raise HTTPException(status_code=response.status, detail=detail)
+            data = await response.json()
 
-            result = await response.json()
-            return {
-                "response": result['choices'][0]['message']['content']
-            }
+    return {"response": data}
