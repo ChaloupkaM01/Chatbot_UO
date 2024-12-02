@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import aiohttp
 import os
@@ -9,8 +10,12 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ASSISTANT_ID = os.getenv("ASSISTANT_ID")
 
+
+
+
 # FastAPI aplikace
 app = FastAPI()
+
 
 # Pydantic model pro požadavek
 class UserMessage(BaseModel):
@@ -126,3 +131,16 @@ async def ask_assistant(user_message: UserMessage):
         ]
 
         return {"response": response}
+
+
+
+# Read the HTML file once at startup
+with open("index.html") as f:
+    html = f.read()
+
+@app.get("/ui", response_class=HTMLResponse)
+async def web_app() -> HTMLResponse:
+    """
+    Web App
+    """
+    return HTMLResponse(html)
